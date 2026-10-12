@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/3pleX-dev/goredis/store"
 )
 
 func main() {
-	store := make(map[string]string);
+	store := store.NewStore();
 
 	scanner := bufio.NewScanner(os.Stdin);
-	commands := []string{"SET", "GET"}
 
 	println("Enter command (SET key value or GET key):")
 	for scanner.Scan() {
 		input := scanner.Text()
-		parts := strings.Fields(input)
-		writer := bufio.NewWriter(os.Stderr)
+		parts := strings.SplitN(input, " ", 3)
 
 		if len(parts) == 0 {
 			continue
@@ -26,37 +26,31 @@ func main() {
 		command := parts[0]
 
 		switch command {
-			case commands[0]:
+			case "SET":
 				if len(parts) != 3 {
-					fmt.Fprintf(writer, "SET command requires 2 arguments\n")
-					writer.Flush()
+					fmt.Fprintln(os.Stderr, "SET command requires 2 arguments")
 					continue
 				}
 				key := parts[1]
 				value := parts[2]
 
-				store[key] = value
-				writer.WriteString("OK\n")
-				writer.Flush()
-			case commands[1]:
+				store.Set(key, value)
+				fmt.Fprintln(os.Stdout, "OK")
+			case "GET":
 				if len(parts) != 2 {
-					fmt.Fprintf(writer, "GET command requires 1 argument\n")
-					writer.Flush()
+					fmt.Fprintln(os.Stderr, "GET command requires 1 argument")
 					continue
 				}
 				key := parts[1]
-				value, ok := store[key]
+				value, ok := store.Get(key)
 				if !ok {
-					fmt.Fprintf(writer, "no key (%s) found\n", key)
-					writer.Flush()
+					fmt.Fprintf(os.Stderr, "no key (%s) found\n", key)
 					continue
 				} else {
-					fmt.Fprintf(writer, "value: %s\n", value)
-					writer.Flush()
+					fmt.Fprintf(os.Stdout, "value: %s\n", value)
 				}
 			default:
-				fmt.Fprintf(writer, "unknown command: %s\n", command)
-				writer.Flush()
+				fmt.Fprintf(os.Stderr, "unknown command: %s\n", command)
 				continue
 		}
 	}
