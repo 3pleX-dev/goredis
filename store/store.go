@@ -18,3 +18,7 @@ func (s *Store) Get(key string) (string, bool) {
 	value, ok := s.data[key]
 	return value, ok
 }
+
+func (s *Store) Delete(key string) {
+	delete(s.data, key)
+}
